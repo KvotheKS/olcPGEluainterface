@@ -1,0 +1,409 @@
+#define OLC_PGE_APPLICATION
+#include "base_olc.h"
+#include <memory>
+
+extern "C"
+{
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+}
+
+//	g++ -o cpp_base cpp_base.cpp -llua -ldl -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17
+
+class lua_hub
+{
+private:
+	static lua_State* stk;
+	static std::unique_ptr<olc::PixelGameEngine> demiwp;
+private:
+	friend class init;
+	
+	class init
+	{
+	public:
+		init()
+		{
+			demiwp = std::make_unique<olc::PixelGameEngine>();
+			stk = luaL_newstate();
+			luaL_openlibs(stk);
+				
+		}
+		~init()
+		{
+			lua_close(stk);
+		}
+	}; 
+	
+	static init __helper;
+public:
+	static void set_file(const char* str)
+	{ luaL_dofile(stk, str); reg_fns();}
+	static void reg_fns()
+	{
+		lua_register(stk,"Construct",Construct);
+		lua_register(stk,"Start",Start);
+		lua_register(stk,"Draw",Draw);
+		lua_register(stk,"DrawLine",DrawLine);
+		lua_register(stk,"DrawCircle",DrawCircle);
+		lua_register(stk,"FillCircle",FillCircle);
+		lua_register(stk,"DrawRect",DrawRect);
+		lua_register(stk,"FillRect",FillRect);
+		lua_register(stk,"DrawTriangle",DrawTriangle);
+		lua_register(stk,"FillTriangle",FillTriangle);
+		lua_register(stk,"DrawSprite",DrawSprite);
+		lua_register(stk,"DrawPartialSprite",DrawPartialSprite);
+		lua_register(stk,"DrawString",DrawString);
+		lua_register(stk,"DrawStringProp",DrawStringProp);
+		lua_register(stk,"DrawDecal",DrawDecal);
+		lua_register(stk,"DrawPartialDecal",DrawPartialDecal);
+		lua_register(stk,"DrawStringDecal",DrawStringDecal);
+		lua_register(stk,"DrawStringPropDecal",DrawStringPropDecal);
+		lua_register(stk,"FillRectDecal",FillRectDecal);
+		lua_register(stk,"Clear",Clear);
+		lua_register(stk,"KeyPressed",KeyPressed);
+		lua_register(stk,"KeyHold",KeyHold);
+		lua_register(stk,"MousePress",MousePress);
+		lua_register(stk,"MouseHold",MouseHold);
+		lua_register(stk,"GetMouseX",GetMouseX);
+		lua_register(stk,"GetMouseY",GetMouseY);
+		lua_register(stk,"GetMouseWheel",GetMouseWheel);
+		lua_register(stk,"newDecal" , newDecal);
+		lua_register(stk,"newSprite" , newSprite);
+		lua_register(stk, "delDecal", delDecal);
+		lua_register(stk, "delSprite", delSprite);
+	}
+public:
+	static int newDecal(lua_State* stk)
+	{ 
+		olc::Sprite* sprt = (olc::Sprite*)(long long)lua_tonumber(stk,1);
+		lua_pushnumber(stk, (long long)new olc::Decal(sprt));
+		return 1;
+	}
+	static int newSprite(lua_State* stk)
+	{
+		const char* str = lua_tostring(stk,1);
+		lua_pushnumber(stk, (long long)new olc::Sprite(str));
+		return 1;
+	}
+	static int delDecal(lua_State* stk)
+	{ 
+		long long t = lua_tonumber(stk, 1);
+		delete (olc::Decal*)t;
+		return 1;
+	}
+	static int delSprite(lua_State* stk)
+	{
+		long long t = lua_tonumber(stk,1);
+		delete (olc::Sprte*)t;
+		return 1;
+	}
+public:
+	static int Construct(lua_State* stk);
+	static int Start(lua_State* stk);
+	static int Draw(lua_State* stk);
+	static int DrawLine(lua_State* stk);
+	static int DrawCircle(lua_State* stk);
+	static int FillCircle(lua_State* stk);
+	static int DrawRect(lua_State* stk);
+	static int FillRect(lua_State* stk);
+	static int DrawTriangle(lua_State* stk);
+	static int FillTriangle(lua_State* stk);
+	static int DrawSprite(lua_State* stk);
+	static int DrawPartialSprite(lua_State* stk);
+	static int DrawString(lua_State* stk);
+	static int DrawStringProp(lua_State* stk);
+	static int DrawDecal(lua_State* stk);
+	static int DrawPartialDecal(lua_State* stk);
+	static int DrawStringDecal(lua_State* stk);
+	static int DrawStringPropDecal(lua_State* stk);
+	static int FillRectDecal(lua_State* stk);
+	static int Clear(lua_State* stk);
+	static int KeyPressed(lua_State* stk);
+	static int KeyHold(lua_State* stk);
+	static int MousePress(lua_State* stk);
+	static int MouseHold(lua_State* stk);
+	static int GetMouseX(lua_State* stk);
+	static int GetMouseY(lua_State* stk);
+	static int GetMouseWheel(lua_State* stk);
+};
+
+lua_State* lua_hub::stk;
+std::unique_ptr<olc::PixelGameEngine> lua_hub::demiwp;
+lua_hub::init lua_hub::__helper;
+
+int lua_hub::Construct(lua_State* stk)
+{
+	int a, b, c, d;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	demiwp->Construct(a,b,c,d);
+	return 1;
+}
+
+int lua_hub::Start(lua_State* stk)
+{
+	demiwp->Start();
+	return 1;
+}
+
+int lua_hub::Draw(lua_State* stk)
+{
+	int a, b, c;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	demiwp->Draw(a,b,c);
+	return 1;
+}
+
+int lua_hub::DrawLine(lua_State* stk)
+{
+	int a, b, c, d, e;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	e = lua_tonumber(stk,5);
+	demiwp->DrawLine(a,b,c,d,olc::Pixel(e));
+	return 1;
+}
+
+int lua_hub::DrawCircle(lua_State* stk)
+{
+	int a, b, c, d;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	demiwp->DrawCircle(a,b,c,olc::Pixel(d));
+	return 1;
+}
+
+int lua_hub::FillCircle(lua_State* stk)
+{
+	int a, b, c, d;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	demiwp->FillCircle(a,b,c,olc::Pixel(d));
+	return 1;
+}
+
+int lua_hub::DrawRect(lua_State* stk)
+{
+	int a, b, c, d, e;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	e = lua_tonumber(stk,5);
+	demiwp->DrawRect(a,b,c,d,olc::Pixel(e));
+	return 1;
+}
+
+int lua_hub::FillRect(lua_State* stk)
+{
+	int a, b, c, d, e;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	e = lua_tonumber(stk,5);
+	demiwp->FillRect(a,b,c,d,olc::Pixel(e));
+	return 1;
+}
+
+int lua_hub::DrawTriangle(lua_State* stk)
+{
+	int a, b, c, d, e, f, g;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	e = lua_tonumber(stk,5);
+	f = lua_tonumber(stk,6);
+	g = lua_tonumber(stk,7);
+	demiwp->DrawTriangle(a,b,c,d,e,f,olc::Pixel(g));
+	return 1;
+}
+
+int lua_hub::FillTriangle(lua_State* stk)
+{
+	int a, b, c, d, e, f, g;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	e = lua_tonumber(stk,5);
+	f = lua_tonumber(stk,6);
+	g = lua_tonumber(stk,7);
+	demiwp->FillTriangle(a,b,c,d,e,f,olc::Pixel(g));
+	return 1;
+}
+
+int lua_hub::DrawSprite(lua_State* stk)
+{
+	int a, b, d;
+	olc::Sprite* c;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = (olc::Sprite*) (long long) lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	demiwp->DrawSprite(a,b, c, d);
+	return 1;
+}
+
+int lua_hub::DrawPartialSprite(lua_State* stk)
+{
+	int a, b, d, e, f, g, h;
+	olc::Sprite* c;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	c = (olc::Sprite*) (long long) lua_tonumber(stk,3);
+	d = lua_tonumber(stk,4);
+	e = lua_tonumber(stk,5);
+	f = lua_tonumber(stk,6);
+	g = lua_tonumber(stk,7);
+	h = lua_tonumber(stk,8);
+	demiwp->DrawPartialSprite(a, b, c, d, e, f, g, h);
+	return 1;
+}
+
+int lua_hub::DrawString(lua_State* stk)
+{
+	int a, b, d, e;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	const char* c = lua_tostring(stk,3);
+	d = lua_tonumber(stk,4);
+	e = lua_tonumber(stk,5);
+	demiwp->DrawString(a,b,c, d, e);
+	return 1;
+}
+
+int lua_hub::DrawStringProp(lua_State* stk)
+{
+	int a, b, d, e;
+	a = lua_tonumber(stk,1);
+	b = lua_tonumber(stk,2);
+	const char* c = lua_tostring(stk,3);
+	d = lua_tonumber(stk,4);
+	e = lua_tonumber(stk,5);
+	demiwp->DrawStringProp(a,b, c, olc::Pixel(d), e);
+	return 1;
+}
+
+int lua_hub::DrawDecal(lua_State* stk)
+{
+	const olc::vf2d a = {lua_tonumber(stk,1) , lua_tonumber(stk,2)};
+	olc::Decal* b = (olc::Decal*) (long long) lua_tonumber(stk,3);
+	const olc::vf2d c = {lua_tonumber(stk,4), lua_tonumber(stk,5)};
+	int d = lua_tonumber(stk,6);
+	demiwp->DrawDecal(a,b,c,d);
+	return 1;
+}
+
+int lua_hub::DrawPartialDecal(lua_State* stk)
+{
+	const olc::vf2d a = {lua_tonumber(stk,1) , lua_tonumber(stk,2)};
+	olc::Decal* b = (olc::Decal*) (long long) lua_tonumber(stk,3);
+	const olc::vf2d c = {lua_tonumber(stk,4), lua_tonumber(stk,5)};
+	const olc::vf2d d = {lua_tonumber(stk,6), lua_tonumber(stk,7)};
+	const olc::vf2d e = {lua_tonumber(stk,8), lua_tonumber(stk,9)};
+	int f = lua_tonumber(stk,10);
+	demiwp->DrawPartialDecal(a,b,c,d,e,f);
+	return 1;
+}
+
+int lua_hub::DrawStringDecal(lua_State* stk)
+{
+	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
+	const char* b = lua_tostring(stk,3);
+	int c = lua_tonumber(stk,4);
+	const olc::vf2d d = {lua_tonumber(stk,5), lua_tonumber(stk,6)};
+	demiwp->DrawStringDecal(a,b,c,d);
+	return 1;
+}
+
+int lua_hub::DrawStringPropDecal(lua_State* stk)
+{
+	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
+	const char* b = lua_tostring(stk,3);
+	int c = lua_tonumber(stk,4);
+	const olc::vf2d d = {lua_tonumber(stk,5), lua_tonumber(stk,6)};
+	demiwp->DrawStringPropDecal(a,b,c,d);
+	return 1;
+}
+
+int lua_hub::FillRectDecal(lua_State* stk)
+{
+	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
+	const olc::vf2d b = {lua_tonumber(stk,3), lua_tonumber(stk,4)};
+	int c = lua_tonumber(stk,5);
+	demiwp->FillRectDecal(a,b,c);
+	return 1;
+}
+
+
+int lua_hub::Clear(lua_State* stk)
+{
+	demiwp->Clear(lua_tonumber(stk,1));
+	return 1;
+}
+
+int lua_hub::KeyPressed(lua_State* stk)
+{
+	int k = demiwp->GetKey((olc::Key)lua_tonumber(stk,1)).bPressed;
+	lua_pushboolean(stk, k);
+	return 1;
+}
+
+int lua_hub::KeyHold(lua_State* stk)
+{
+	int k = demiwp->GetKey((olc::Key)lua_tonumber(stk,1)).bHeld;
+	lua_pushboolean(stk, k);
+	return 1;
+
+}
+
+int lua_hub::MousePress(lua_State* stk)
+{
+	int p = demiwp->GetMouse((olc::Key)lua_tonumber(stk,1)).bPressed;
+	lua_pushboolean(stk,p);
+	return 1;
+}
+
+int lua_hub::MouseHold(lua_State* stk)
+{
+	int p = demiwp->GetMouse((olc::Key)lua_tonumber(stk,1)).bHeld;
+	lua_pushboolean(stk,p);
+	return 1;
+}
+
+int lua_hub::GetMouseX(lua_State* stk)
+{
+	lua_pushinteger(stk, demiwp->GetMouseX());
+	return 1;
+}
+
+int lua_hub::GetMouseY(lua_State* stk)
+{
+	lua_pushinteger(stk, demiwp->GetMouseY());
+	return 1;
+}
+
+int lua_hub::GetMouseWheel(lua_State* stk)
+{
+	lua_pushinteger(stk, demiwp->GetMouseWheel());
+	return 1;
+}
+
+
+int main(int argc, char** argv)
+{
+	lua_hub::set_file(argv[1]);
+}

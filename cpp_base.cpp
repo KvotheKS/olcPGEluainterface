@@ -15,19 +15,37 @@ class lua_hub
 {
 private:
 	static lua_State* stk;
-	static std::unique_ptr<olc::PixelGameEngine> demiwp;
+	static char* updater;
 private:
 	friend class init;
+	
+	class PGExt : public olc::PixelGameEngine
+	{
+	public:
+		bool OnUserCreate() override
+		{
+			return true;
+		}
+		bool OnUserUpdate(float fElapsedTime) override
+		{
+			lua_getglobal(stk, updater);
+			lua_pushnumber(stk, fElapsedTime);
+			lua_pcall(stk, 1,1,0);
+			return lua_toboolean(stk,-1);
+		}
+	};
+	
+	static std::unique_ptr<PGExt> demiwp;
 	
 	class init
 	{
 	public:
 		init()
 		{
-			demiwp = std::make_unique<olc::PixelGameEngine>();
+			demiwp = std::make_unique<PGExt>();
 			stk = luaL_newstate();
 			luaL_openlibs(stk);
-				
+			reg_fns();
 		}
 		~init()
 		{
@@ -38,7 +56,10 @@ private:
 	static init __helper;
 public:
 	static void set_file(const char* str)
-	{ luaL_dofile(stk, str); reg_fns();}
+	{ luaL_dofile(stk, str);}
+	static void set_updater(char* str)
+	{updater = str;}
+
 	static void reg_fns()
 	{
 		lua_register(stk,"Construct",Construct);
@@ -72,8 +93,25 @@ public:
 		lua_register(stk,"newSprite" , newSprite);
 		lua_register(stk, "delDecal", delDecal);
 		lua_register(stk, "delSprite", delSprite);
+		//Test-only functions. Serve no other purpose.
+		lua_register(stk, "newInt", newInt);
+		lua_register(stk, "delInt", delInt);
 	}
 public:
+	static int newInt(lua_State* stk)
+	{
+		int* p = new int;
+		std::cout << p << std::endl;
+		lua_pushnumber(stk, (long long)p);
+		return 1;
+	}
+	static int delInt(lua_State* stk)
+	{
+		int* p = (int*)(long long)lua_tonumber(stk,1);
+		std::cout << p << std::endl;
+		delete p;
+		return 1;
+	}
 	static int newDecal(lua_State* stk)
 	{ 
 		olc::Sprite* sprt = (olc::Sprite*)(long long)lua_tonumber(stk,1);
@@ -95,7 +133,7 @@ public:
 	static int delSprite(lua_State* stk)
 	{
 		long long t = lua_tonumber(stk,1);
-		delete (olc::Sprte*)t;
+		delete (olc::Sprite*)t;
 		return 1;
 	}
 public:
@@ -129,7 +167,8 @@ public:
 };
 
 lua_State* lua_hub::stk;
-std::unique_ptr<olc::PixelGameEngine> lua_hub::demiwp;
+char* lua_hub::updater = "update";
+std::unique_ptr<lua_hub::PGExt> lua_hub::demiwp;
 lua_hub::init lua_hub::__helper;
 
 int lua_hub::Construct(lua_State* stk)
@@ -139,7 +178,7 @@ int lua_hub::Construct(lua_State* stk)
 	b = lua_tonumber(stk,2);
 	c = lua_tonumber(stk,3);
 	d = lua_tonumber(stk,4);
-	demiwp->Construct(a,b,c,d);
+	lua_pushboolean(stk,demiwp->Construct(a,b,c,d));
 	return 1;
 }
 
@@ -154,8 +193,8 @@ int lua_hub::Draw(lua_State* stk)
 	int a, b, c;
 	a = lua_tonumber(stk,1);
 	b = lua_tonumber(stk,2);
-	c = lua_tonumber(stk,3);
-	demiwp->Draw(a,b,c);
+	c = lua_tointeger(stk,3);
+	demiwp->Draw(a,b,olc::Pixel(c));
 	return 1;
 }
 
@@ -166,7 +205,7 @@ int lua_hub::DrawLine(lua_State* stk)
 	b = lua_tonumber(stk,2);
 	c = lua_tonumber(stk,3);
 	d = lua_tonumber(stk,4);
-	e = lua_tonumber(stk,5);
+	e = lua_tointeger(stk,5);
 	demiwp->DrawLine(a,b,c,d,olc::Pixel(e));
 	return 1;
 }
@@ -177,7 +216,7 @@ int lua_hub::DrawCircle(lua_State* stk)
 	a = lua_tonumber(stk,1);
 	b = lua_tonumber(stk,2);
 	c = lua_tonumber(stk,3);
-	d = lua_tonumber(stk,4);
+	d = lua_tointeger(stk,4);
 	demiwp->DrawCircle(a,b,c,olc::Pixel(d));
 	return 1;
 }
@@ -188,7 +227,7 @@ int lua_hub::FillCircle(lua_State* stk)
 	a = lua_tonumber(stk,1);
 	b = lua_tonumber(stk,2);
 	c = lua_tonumber(stk,3);
-	d = lua_tonumber(stk,4);
+	d = lua_tointeger(stk,4);
 	demiwp->FillCircle(a,b,c,olc::Pixel(d));
 	return 1;
 }
@@ -200,7 +239,7 @@ int lua_hub::DrawRect(lua_State* stk)
 	b = lua_tonumber(stk,2);
 	c = lua_tonumber(stk,3);
 	d = lua_tonumber(stk,4);
-	e = lua_tonumber(stk,5);
+	e = lua_tointeger(stk,5);
 	demiwp->DrawRect(a,b,c,d,olc::Pixel(e));
 	return 1;
 }
@@ -212,7 +251,7 @@ int lua_hub::FillRect(lua_State* stk)
 	b = lua_tonumber(stk,2);
 	c = lua_tonumber(stk,3);
 	d = lua_tonumber(stk,4);
-	e = lua_tonumber(stk,5);
+	e = lua_tointeger(stk,5);
 	demiwp->FillRect(a,b,c,d,olc::Pixel(e));
 	return 1;
 }
@@ -226,7 +265,7 @@ int lua_hub::DrawTriangle(lua_State* stk)
 	d = lua_tonumber(stk,4);
 	e = lua_tonumber(stk,5);
 	f = lua_tonumber(stk,6);
-	g = lua_tonumber(stk,7);
+	g = lua_tointeger(stk,7);
 	demiwp->DrawTriangle(a,b,c,d,e,f,olc::Pixel(g));
 	return 1;
 }
@@ -240,7 +279,7 @@ int lua_hub::FillTriangle(lua_State* stk)
 	d = lua_tonumber(stk,4);
 	e = lua_tonumber(stk,5);
 	f = lua_tonumber(stk,6);
-	g = lua_tonumber(stk,7);
+	g = lua_tointeger(stk,7);
 	demiwp->FillTriangle(a,b,c,d,e,f,olc::Pixel(g));
 	return 1;
 }
@@ -280,7 +319,7 @@ int lua_hub::DrawString(lua_State* stk)
 	b = lua_tonumber(stk,2);
 	const char* c = lua_tostring(stk,3);
 	d = lua_tonumber(stk,4);
-	e = lua_tonumber(stk,5);
+	e = lua_tointeger(stk,5);
 	demiwp->DrawString(a,b,c, d, e);
 	return 1;
 }
@@ -292,7 +331,7 @@ int lua_hub::DrawStringProp(lua_State* stk)
 	b = lua_tonumber(stk,2);
 	const char* c = lua_tostring(stk,3);
 	d = lua_tonumber(stk,4);
-	e = lua_tonumber(stk,5);
+	e = lua_tointeger(stk,5);
 	demiwp->DrawStringProp(a,b, c, olc::Pixel(d), e);
 	return 1;
 }
@@ -302,7 +341,7 @@ int lua_hub::DrawDecal(lua_State* stk)
 	const olc::vf2d a = {lua_tonumber(stk,1) , lua_tonumber(stk,2)};
 	olc::Decal* b = (olc::Decal*) (long long) lua_tonumber(stk,3);
 	const olc::vf2d c = {lua_tonumber(stk,4), lua_tonumber(stk,5)};
-	int d = lua_tonumber(stk,6);
+	int d = lua_tointeger(stk,6);
 	demiwp->DrawDecal(a,b,c,d);
 	return 1;
 }
@@ -314,7 +353,7 @@ int lua_hub::DrawPartialDecal(lua_State* stk)
 	const olc::vf2d c = {lua_tonumber(stk,4), lua_tonumber(stk,5)};
 	const olc::vf2d d = {lua_tonumber(stk,6), lua_tonumber(stk,7)};
 	const olc::vf2d e = {lua_tonumber(stk,8), lua_tonumber(stk,9)};
-	int f = lua_tonumber(stk,10);
+	int f = lua_tointeger(stk,10);
 	demiwp->DrawPartialDecal(a,b,c,d,e,f);
 	return 1;
 }
@@ -323,7 +362,7 @@ int lua_hub::DrawStringDecal(lua_State* stk)
 {
 	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
 	const char* b = lua_tostring(stk,3);
-	int c = lua_tonumber(stk,4);
+	int c = lua_tointeger(stk,4);
 	const olc::vf2d d = {lua_tonumber(stk,5), lua_tonumber(stk,6)};
 	demiwp->DrawStringDecal(a,b,c,d);
 	return 1;
@@ -333,7 +372,7 @@ int lua_hub::DrawStringPropDecal(lua_State* stk)
 {
 	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
 	const char* b = lua_tostring(stk,3);
-	int c = lua_tonumber(stk,4);
+	int c = lua_tointeger(stk,4);
 	const olc::vf2d d = {lua_tonumber(stk,5), lua_tonumber(stk,6)};
 	demiwp->DrawStringPropDecal(a,b,c,d);
 	return 1;
@@ -343,7 +382,7 @@ int lua_hub::FillRectDecal(lua_State* stk)
 {
 	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
 	const olc::vf2d b = {lua_tonumber(stk,3), lua_tonumber(stk,4)};
-	int c = lua_tonumber(stk,5);
+	int c = lua_tointeger(stk,5);
 	demiwp->FillRectDecal(a,b,c);
 	return 1;
 }
@@ -351,7 +390,7 @@ int lua_hub::FillRectDecal(lua_State* stk)
 
 int lua_hub::Clear(lua_State* stk)
 {
-	demiwp->Clear(lua_tonumber(stk,1));
+	demiwp->Clear(lua_tointeger(stk,1));
 	return 1;
 }
 
@@ -406,4 +445,6 @@ int lua_hub::GetMouseWheel(lua_State* stk)
 int main(int argc, char** argv)
 {
 	lua_hub::set_file(argv[1]);
+	if(argc > 2)
+		lua_hub::set_updater(argv[2]);
 }

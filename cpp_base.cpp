@@ -1,14 +1,17 @@
+/*
+	"Author" : @KvotheKS
+	A little program made to interface the olcPixelGameEngine (made by @javidx9) in lua,
+	so that no classes have to be directly used during coding.
+*/
+
 #define OLC_PGE_APPLICATION
 #include "base_olc.h"
 #include <memory>
+#include "include/lua.hpp"
 
-extern "C"
-{
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-}
-
+#ifdef _WIN32
+#pragma comment(lib, "include/lua51.lib")
+#endif
 //	g++ -o cpp_base cpp_base.cpp -llua -ldl -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17
 
 class lua_hub
@@ -338,9 +341,9 @@ int lua_hub::DrawStringProp(lua_State* stk)
 
 int lua_hub::DrawDecal(lua_State* stk)
 {
-	const olc::vf2d a = {lua_tonumber(stk,1) , lua_tonumber(stk,2)};
+	const olc::vf2d a = {(float)lua_tonumber(stk,1) , (float)lua_tonumber(stk,2)};
 	olc::Decal* b = (olc::Decal*) (long long) lua_tonumber(stk,3);
-	const olc::vf2d c = {lua_tonumber(stk,4), lua_tonumber(stk,5)};
+	const olc::vf2d c = {(float)lua_tonumber(stk,4),(float) lua_tonumber(stk,5)};
 	int d = lua_tointeger(stk,6);
 	demiwp->DrawDecal(a,b,c,d);
 	return 1;
@@ -348,11 +351,11 @@ int lua_hub::DrawDecal(lua_State* stk)
 
 int lua_hub::DrawPartialDecal(lua_State* stk)
 {
-	const olc::vf2d a = {lua_tonumber(stk,1) , lua_tonumber(stk,2)};
+	const olc::vf2d a = {(float)lua_tonumber(stk,1) ,(float)lua_tonumber(stk,2)};
 	olc::Decal* b = (olc::Decal*) (long long) lua_tonumber(stk,3);
-	const olc::vf2d c = {lua_tonumber(stk,4), lua_tonumber(stk,5)};
-	const olc::vf2d d = {lua_tonumber(stk,6), lua_tonumber(stk,7)};
-	const olc::vf2d e = {lua_tonumber(stk,8), lua_tonumber(stk,9)};
+	const olc::vf2d c = {(float)lua_tonumber(stk,4), (float)lua_tonumber(stk,5)};
+	const olc::vf2d d = {(float)lua_tonumber(stk,6), (float)lua_tonumber(stk,7)};
+	const olc::vf2d e = {(float)lua_tonumber(stk,8), (float)lua_tonumber(stk,9)};
 	int f = lua_tointeger(stk,10);
 	demiwp->DrawPartialDecal(a,b,c,d,e,f);
 	return 1;
@@ -360,28 +363,28 @@ int lua_hub::DrawPartialDecal(lua_State* stk)
 
 int lua_hub::DrawStringDecal(lua_State* stk)
 {
-	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
+	const olc::vf2d a = {(float)lua_tonumber(stk,1), (float)lua_tonumber(stk,2)};
 	const char* b = lua_tostring(stk,3);
 	int c = lua_tointeger(stk,4);
-	const olc::vf2d d = {lua_tonumber(stk,5), lua_tonumber(stk,6)};
+	const olc::vf2d d = {(float)lua_tonumber(stk,5), (float)lua_tonumber(stk,6)};
 	demiwp->DrawStringDecal(a,b,c,d);
 	return 1;
 }
 
 int lua_hub::DrawStringPropDecal(lua_State* stk)
 {
-	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
+	const olc::vf2d a = {(float)lua_tonumber(stk,1),(float)lua_tonumber(stk,2)};
 	const char* b = lua_tostring(stk,3);
 	int c = lua_tointeger(stk,4);
-	const olc::vf2d d = {lua_tonumber(stk,5), lua_tonumber(stk,6)};
+	const olc::vf2d d = {(float)lua_tonumber(stk,5),(float) lua_tonumber(stk,6)};
 	demiwp->DrawStringPropDecal(a,b,c,d);
 	return 1;
 }
 
 int lua_hub::FillRectDecal(lua_State* stk)
 {
-	const olc::vf2d a = {lua_tonumber(stk,1), lua_tonumber(stk,2)};
-	const olc::vf2d b = {lua_tonumber(stk,3), lua_tonumber(stk,4)};
+	const olc::vf2d a = {(float)lua_tonumber(stk,1),(float) lua_tonumber(stk,2)};
+	const olc::vf2d b = {(float)lua_tonumber(stk,3),(float) lua_tonumber(stk,4)};
 	int c = lua_tointeger(stk,5);
 	demiwp->FillRectDecal(a,b,c);
 	return 1;
@@ -396,14 +399,14 @@ int lua_hub::Clear(lua_State* stk)
 
 int lua_hub::KeyPressed(lua_State* stk)
 {
-	int k = demiwp->GetKey((olc::Key)lua_tonumber(stk,1)).bPressed;
+	int k = demiwp->GetKey((olc::Key)(long long)lua_tonumber(stk,1)).bPressed;
 	lua_pushboolean(stk, k);
 	return 1;
 }
 
 int lua_hub::KeyHold(lua_State* stk)
 {
-	int k = demiwp->GetKey((olc::Key)lua_tonumber(stk,1)).bHeld;
+	int k = demiwp->GetKey((olc::Key)(long long)lua_tonumber(stk,1)).bHeld;
 	lua_pushboolean(stk, k);
 	return 1;
 
@@ -411,14 +414,14 @@ int lua_hub::KeyHold(lua_State* stk)
 
 int lua_hub::MousePress(lua_State* stk)
 {
-	int p = demiwp->GetMouse((olc::Key)lua_tonumber(stk,1)).bPressed;
+	int p = demiwp->GetMouse((long long)lua_tonumber(stk,1)).bPressed;
 	lua_pushboolean(stk,p);
 	return 1;
 }
 
 int lua_hub::MouseHold(lua_State* stk)
 {
-	int p = demiwp->GetMouse((olc::Key)lua_tonumber(stk,1)).bHeld;
+	int p = demiwp->GetMouse((long long)lua_tonumber(stk,1)).bHeld;
 	lua_pushboolean(stk,p);
 	return 1;
 }

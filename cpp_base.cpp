@@ -2,23 +2,29 @@
 	"Author" : @KvotheKS
 	A little program made to interface the olcPixelGameEngine (made by @javidx9) in lua,
 	so that no classes have to be directly used during coding.
+
+	
+	Linux compile :	g++ -o cpp_base cpp_base.cpp -llua -ldl -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17
+	msvc compile : cl /EHsc cpp_base.cpp
 */
+
+#include "include/lua.hpp"
 
 #define OLC_PGE_APPLICATION
 #include "base_olc.h"
 #include <memory>
-#include "include/lua.hpp"
 
 #ifdef _WIN32
-#pragma comment(lib, "include/lua51.lib")
+#pragma comment(lib, "liblua54.a")
 #endif
-//	g++ -o cpp_base cpp_base.cpp -llua -ldl -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17
 
 class lua_hub
 {
 private:
 	static lua_State* stk;
-	static char* updater;
+#ifdef AUTOMATIC_REQUIRE
+	static std::string path;
+#endif
 private:
 	friend class init;
 	
@@ -27,11 +33,16 @@ private:
 	public:
 		bool OnUserCreate() override
 		{
+		
+			lua_getglobal(stk, "Create");
+			lua_pcall(stk, 1,1,0);
+		//	std::cout << "Create";
 			return true;
 		}
 		bool OnUserUpdate(float fElapsedTime) override
 		{
-			lua_getglobal(stk, updater);
+		//	std::cout << "UPDATE";
+			lua_getglobal(stk, "Update");
 			lua_pushnumber(stk, fElapsedTime);
 			lua_pcall(stk, 1,1,0);
 			return lua_toboolean(stk,-1);
@@ -46,9 +57,19 @@ private:
 		init()
 		{
 			demiwp = std::make_unique<PGExt>();
+			
 			stk = luaL_newstate();
 			luaL_openlibs(stk);
 			reg_fns();
+		/*
+			lua_getglobal(stk,"require");
+			lua_pushstring(stk, "aux");
+			lua_pcall(stk,1,1,0);
+		*/
+		#ifdef AUTOMATIC_REQUIRE
+			luaL_dofile(stk, (path + "\134helper.lua").c_str());
+		#endif
+		//	strcpy(updater,"update\0");
 		}
 		~init()
 		{
@@ -60,9 +81,7 @@ private:
 public:
 	static void set_file(const char* str)
 	{ luaL_dofile(stk, str);}
-	static void set_updater(char* str)
-	{updater = str;}
-
+	
 	static void reg_fns()
 	{
 		lua_register(stk,"Construct",Construct);
@@ -170,9 +189,9 @@ public:
 };
 
 lua_State* lua_hub::stk;
-char* lua_hub::updater = "update";
 std::unique_ptr<lua_hub::PGExt> lua_hub::demiwp;
 lua_hub::init lua_hub::__helper;
+std::string lua_hub::path;
 
 int lua_hub::Construct(lua_State* stk)
 {
@@ -447,7 +466,9 @@ int lua_hub::GetMouseWheel(lua_State* stk)
 
 int main(int argc, char** argv)
 {
-	lua_hub::set_file(argv[1]);
-	if(argc > 2)
-		lua_hub::set_updater(argv[2]);
+	if(argc >= 2)
+		lua_hub::set_file(argv[1]);
+	else
+		std::cout << "No Output Files!\n";
 }
+

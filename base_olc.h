@@ -542,7 +542,7 @@ namespace olc
 		BLUE(0, 0, 255), DARK_BLUE(0, 0, 128), VERY_DARK_BLUE(0, 0, 64),
 		MAGENTA(255, 0, 255), DARK_MAGENTA(128, 0, 128), VERY_DARK_MAGENTA(64, 0, 64),
 		WHITE(255, 255, 255), BLACK(0, 0, 0), BLANK(0, 0, 0, 0);
-
+		
 	// Thanks to scripticuk and others for updating the key maps
 	// NOTE: The GLUT platform will need updating, open to contributions ;)
 	enum Key

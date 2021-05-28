@@ -9,7 +9,7 @@
 */
 
 #include "include/lua.hpp"
-
+#define AUTOMATIC_REQUIRE
 #define OLC_PGE_APPLICATION
 #include "base_olc.h"
 #include <memory>
@@ -36,16 +36,15 @@ private:
 		
 			lua_getglobal(stk, "Create");
 			lua_pcall(stk, 1,1,0);
-		//	std::cout << "Create";
-			return true;
+			return lua_toboolean(stk, 1);
 		}
 		bool OnUserUpdate(float fElapsedTime) override
 		{
-		//	std::cout << "UPDATE";
+//			std::cout << "UPDATE";
 			lua_getglobal(stk, "Update");
 			lua_pushnumber(stk, fElapsedTime);
 			lua_pcall(stk, 1,1,0);
-			return lua_toboolean(stk,-1);
+			return lua_toboolean(stk, 1);
 		}
 	};
 	
@@ -80,7 +79,7 @@ private:
 	static init __helper;
 public:
 	static void set_file(const char* str)
-	{ luaL_dofile(stk, str);}
+	{luaL_dofile(stk, str);}
 	
 	static void reg_fns()
 	{
@@ -342,7 +341,7 @@ int lua_hub::DrawString(lua_State* stk)
 	const char* c = lua_tostring(stk,3);
 	d = lua_tonumber(stk,4);
 	e = lua_tointeger(stk,5);
-	demiwp->DrawString(a,b,c, d, e);
+	demiwp->DrawString(a,b,c,d, e);
 	return 1;
 }
 

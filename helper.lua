@@ -1,3 +1,4 @@
+-- Elements from olcPixelGameEngine adapted for usage in lua.
 function Pixel(a,b,c,d)
 	return a | (b << 8) | (c << 16) | ((d or 0xFF) << 24)
 end
@@ -23,3 +24,5 @@ colors ={["GREY"] = Pixel(192, 192, 192), ["DARK_GREY"] = Pixel(128, 128, 128), 
 		["BLUE"] = Pixel(0, 0, 255), ["DARK_BLUE"] = Pixel(0, 0, 128), ["VERY_DARK_BLUE"] = Pixel(0, 0, 64),
 		["MAGENTA"] = Pixel(255, 0, 255), ["DARK_MAGENTA"] = Pixel(128, 0, 128), ["VERY_DARK_MAGENTA"] = Pixel(64, 0, 64),
 		["WHITE"] = Pixel(255, 255, 255), ["BLACK"] = Pixel(0, 0, 0), ["BLANK"] = Pixel(0, 0, 0, 0)}
+
+--Homebrew Functions

@@ -18,6 +18,23 @@
 #pragma comment(lib, "liblua54.a")
 #endif
 
+class auxlib
+{
+public:
+	static int random(lua_State* stk)
+	{
+		uint64_t seed = lua_tonumber(stk,1)*48271;
+		uint32_t x = (seed & 0x7fffffff) + (seed >> 31);
+		x = (x & 0x7fffffff) + (x >> 31);
+		lua_pushnumber(stk,x);
+		return 1;
+	}
+	static void reg_aux(lua_State* stk)
+	{
+		lua_register(stk, "random", random);
+	}
+};
+
 class lua_hub
 {
 private:
@@ -36,7 +53,7 @@ private:
 		
 			lua_getglobal(stk, "Create");
 			lua_pcall(stk, 1,1,0);
-			return lua_toboolean(stk, 1);
+			return lua_toboolean(stk, -1);
 		}
 		bool OnUserUpdate(float fElapsedTime) override
 		{
@@ -44,7 +61,8 @@ private:
 			lua_getglobal(stk, "Update");
 			lua_pushnumber(stk, fElapsedTime);
 			lua_pcall(stk, 1,1,0);
-			return lua_toboolean(stk, 1);
+			bool p = lua_toboolean(stk, -1);
+			return p;
 		}
 	};
 	
@@ -60,13 +78,19 @@ private:
 			stk = luaL_newstate();
 			luaL_openlibs(stk);
 			reg_fns();
+			auxlib::reg_aux(stk);
 		/*
 			lua_getglobal(stk,"require");
 			lua_pushstring(stk, "aux");
 			lua_pcall(stk,1,1,0);
 		*/
 		#ifdef AUTOMATIC_REQUIRE
-			luaL_dofile(stk, (path + "\134helper.lua").c_str());
+			path = "/home/alexsander/Desktop/olcPGEluainterface-main";
+			#ifdef _WIN32	
+				luaL_dofile(stk, (path + "\134helper.lua").c_str());
+			#else
+				luaL_dofile(stk, (path + "/helper.lua").c_str());
+			#endif
 		#endif
 		//	strcpy(updater,"update\0");
 		}
@@ -83,6 +107,8 @@ public:
 	
 	static void reg_fns()
 	{
+		lua_register(stk, "ScreenWidth", ScreenWidth);
+		lua_register(stk, "ScreenHeight", ScreenHeight);
 		lua_register(stk,"Construct",Construct);
 		lua_register(stk,"Start",Start);
 		lua_register(stk,"Draw",Draw);
@@ -119,6 +145,17 @@ public:
 		lua_register(stk, "delInt", delInt);
 	}
 public:
+	static int ScreenWidth(lua_State* stk)
+	{
+		lua_pushnumber(stk, demiwp->ScreenWidth());
+		return 1;
+	}
+	static int ScreenHeight(lua_State* stk)
+	{
+		lua_pushnumber(stk, demiwp->ScreenHeight());
+		return 1;
+	}
+
 	static int newInt(lua_State* stk)
 	{
 		int* p = new int;
@@ -470,4 +507,3 @@ int main(int argc, char** argv)
 	else
 		std::cout << "No Output Files!\n";
 }
-

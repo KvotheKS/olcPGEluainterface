@@ -26,3 +26,44 @@ colors ={["GREY"] = Pixel(192, 192, 192), ["DARK_GREY"] = Pixel(128, 128, 128), 
 		["WHITE"] = Pixel(255, 255, 255), ["BLACK"] = Pixel(0, 0, 0), ["BLANK"] = Pixel(0, 0, 0, 0)}
 
 --Homebrew Functions
+
+--Button metaclass, has vertices and an action function
+--Every button "has" to be a rectangle.
+Button = {fVertex = {}, Dimen = {}, name = "", col = colors.WHITE, fn = nil}
+
+function Button:create(fVertex, Dimen, name, col, fn)
+	btt = {}
+	setmetatable(btt, self)
+	self.__index = self
+	table.insert(self.fVertex, {xD = fVertex.xD, yD = fVertex.yD})
+	table.insert(self.Dimen, {xD = Dimen.xD, yD = Dimen.yD})
+	self.name = name
+	self.col = col
+	self.fn = fn
+	
+	return btt
+end
+
+--checks whether mouse is hovering the button
+function Button:is_hovering()
+	local k = {xD = GetMouseX(), yD = GetMouseY()}
+	flag = (k.xD >= self.fVertex.xD and k.xD <= (self.fVertex.xD + self.Dimen.xD))
+	flag = flag and (k.yD >= self.fVertex.yD and k.yD <= (self.fVertex.yD + self.Dimen.yD))
+	return flag
+end
+
+--if mouse is hovering, it calls fn and returns true
+--for this function to return the correct flag, fn has to 
+--be a void function.
+function Button:activate()
+	local act = ((self.is_hovering() and self.fn()) == nil)
+	return act
+end
+
+-- some utility functions
+
+--Draws centralized Text
+function DrawCentralS(x, y, str, col, scale) 
+	local pos = x - (str:len()*4*scale)
+	DrawString(pos, y, str, col, scale)
+end

@@ -1,4 +1,4 @@
--- Elements from olcPixelGameEngine adapted for usage in lua.
+--Elements from olcPixelGameEngine adapted for usage in lua.
 function Pixel(a,b,c,d)
 	return a | (b << 8) | (c << 16) | ((d or 0xFF) << 24)
 end
@@ -29,27 +29,39 @@ colors ={["GREY"] = Pixel(192, 192, 192), ["DARK_GREY"] = Pixel(128, 128, 128), 
 
 --Button metaclass, has vertices and an action function
 --Every button "has" to be a rectangle.
-Button = {fVertex = {}, Dimen = {}, name = "", col = colors.WHITE, fn = nil}
+Button = {fVertex = {xD = 0, yD = 0}, Dimen = {xD = 0, yD = 0}, name = "", bkgcol = colors.WHITE, 
+			textcol = colors.BLACK, fn = nil}
 
-function Button:create(fVertex, Dimen, name, col, fn)
+function Button:new(fVertexs, Dimen, name, bkgcol,textcol, fn)
 	btt = {}
 	setmetatable(btt, self)
 	self.__index = self
-	table.insert(self.fVertex, {xD = fVertex.xD, yD = fVertex.yD})
-	table.insert(self.Dimen, {xD = Dimen.xD, yD = Dimen.yD})
-	self.name = name
-	self.col = col
-	self.fn = fn
+	self.fVertex.xD = fVertexs.xD
 	
+	self.fVertex.yD = fVertexs.yD
+	
+	self.Dimen.xD = Dimen.xD
+	self.Dimen.yD = Dimen.yD
+	self.name = name
+	self.bkgcol = bkgcol
+	self.textcol = textcol
+	self.fn = fn
 	return btt
 end
 
 --checks whether mouse is hovering the button
-function Button:is_hovering()
-	local k = {xD = GetMouseX(), yD = GetMouseY()}
-	flag = (k.xD >= self.fVertex.xD and k.xD <= (self.fVertex.xD + self.Dimen.xD))
-	flag = flag and (k.yD >= self.fVertex.yD and k.yD <= (self.fVertex.yD + self.Dimen.yD))
+function Button:is_hovering(mouse)
+	flag = (mouse.xD >= self.fVertex.xD and mouse.xD <= (self.fVertex.xD + self.Dimen.xD))
+	flag = flag and (mouse.yD >= self.fVertex.yD and mouse.yD <= (self.fVertex.yD + self.Dimen.yD))
 	return flag
+end
+
+function Button:DrawCentralized()
+	local x = self.fVertex.xD - self.Dimen.xD
+	local y = self.fVertex.yD - self.Dimen.yD
+	FillRect(x, y, self.Dimen.xD*2, self.Dimen.yD*2, self.bkgcol)
+	DrawRect(x, y, self.Dimen.xD*2, self.Dimen.yD*2, colors.BLACK)
+	DrawCentralS(self.fVertex.xD, self.fVertex.yD, self.name, self.textcol, 1) 
 end
 
 --if mouse is hovering, it calls fn and returns true
@@ -65,5 +77,5 @@ end
 --Draws centralized Text
 function DrawCentralS(x, y, str, col, scale) 
 	local pos = x - (str:len()*4*scale)
-	DrawString(pos, y, str, col, scale)
+	DrawString(pos,y-(4*scale), str, col, scale)
 end

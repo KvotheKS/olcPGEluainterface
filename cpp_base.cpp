@@ -80,6 +80,7 @@ private:
 			reg_fns();
 			auxlib::reg_aux(stk);
 		#ifdef AUTOMATIC_REQUIRE
+			path = "/home/alexsander/Desktop/olcPGEluainterface-main";
 			#ifdef _WIN32	
 				luaL_dofile(stk, (path + "\134helper.lua").c_str());
 			#else
@@ -117,7 +118,6 @@ public:
 		lua_register(stk,"DrawPartialSprite",DrawPartialSprite);
 		lua_register(stk,"DrawString",DrawString);
 		lua_register(stk,"DrawStringProp",DrawStringProp);
-		lua_register(stk, "GetTextSize", GetTextSize);
 		lua_register(stk,"DrawDecal",DrawDecal);
 		lua_register(stk,"DrawPartialDecal",DrawPartialDecal);
 		lua_register(stk,"DrawStringDecal",DrawStringDecal);
@@ -187,13 +187,6 @@ public:
 	{
 		long long t = lua_tonumber(stk,1);
 		delete (olc::Sprite*)t;
-		return 1;
-	}
-	static int GetTextSize(lua_State* stk)
-	{
-		olc::vi2d size = demiwp->GetTextSize(lua_tostring(stk,1));
-		lua_pushnumber(stk, size.x);
-		lua_pushnumber(stk, size.y);
 		return 1;
 	}
 public:

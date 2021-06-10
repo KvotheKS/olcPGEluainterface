@@ -31,29 +31,37 @@ colors ={["GREY"] = Pixel(192, 192, 192), ["DARK_GREY"] = Pixel(128, 128, 128), 
 --Every button "has" to be a rectangle.
 Button = {fVertex = {xD = 0, yD = 0}, Dimen = {xD = 0, yD = 0}, name = "", bkgcol = colors.WHITE, 
 			textcol = colors.BLACK, fn = nil}
+Button.__index = Button
 
 function Button:new(fVertexs, Dimen, name, bkgcol,textcol, fn)
 	btt = {}
 	setmetatable(btt, self)
 	self.__index = self
-	self.fVertex.xD = fVertexs.xD
+	self.fVertex.xD = (fVertexs and fVertexs.xD) or 0
+	self.fVertex.yD = (fVertexs and fVertexs.yD) or 0
+
+	self.Dimen.xD = (Dimen and Dimen.xD) or 0
+	self.Dimen.yD = (Dimen and Dimen.yD) or 0
 	
-	self.fVertex.yD = fVertexs.yD
-	
-	self.Dimen.xD = Dimen.xD
-	self.Dimen.yD = Dimen.yD
-	self.name = name
-	self.bkgcol = bkgcol
-	self.textcol = textcol
+	self.name = name or ""
+	self.bkgcol = bkgcol or colors.WHITE
+	self.textcol = textcol or colors.BLACK
 	self.fn = fn
 	return btt
 end
 
 --checks whether mouse is hovering the button
 function Button:is_hovering(mouse)
-	flag = (mouse.xD >= self.fVertex.xD and mouse.xD <= (self.fVertex.xD + self.Dimen.xD))
-	flag = flag and (mouse.yD >= self.fVertex.yD and mouse.yD <= (self.fVertex.yD + self.Dimen.yD))
+	flag = (mouse.xD >= (self.fVertex.xD - self.Dimen.xD) 
+			and mouse.xD <= (self.fVertex.xD + self.Dimen.xD))
+	flag = flag and (mouse.yD >= (self.fVertex.yD - self.Dimen.xD) 
+					 and mouse.yD <= (self.fVertex.yD + self.Dimen.yD))
 	return flag
+end
+
+function Button:is_clicked()
+	
+	return MousePress(0)
 end
 
 function Button:DrawCentralized()
@@ -67,8 +75,9 @@ end
 --if mouse is hovering, it calls fn and returns true
 --for this function to return the correct flag, fn has to 
 --be a void function.
-function Button:activate()
-	local act = ((self.is_hovering() and self.fn()) == nil)
+function Button:activate(mouse)
+	mouse = mouse or {xD = GetMouseX(), yD = GetMouseY()}
+	local act = ((self:is_hovering(mouse) and self:is_clicked() and self:fn()) == nil)
 	return act
 end
 

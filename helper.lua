@@ -34,25 +34,21 @@ Button = {fVertex = {xD = 0, yD = 0}, Dimen = {xD = 0, yD = 0}, name = "", bkgco
 Button.__index = Button
 
 function Button:new(fVertexs, Dimen, name, bkgcol,textcol, fn)
-	btt = {}
-	setmetatable(btt, self)
-	self.__index = self
-	self.fVertex.xD = (fVertexs and fVertexs.xD) or 0
-	self.fVertex.yD = (fVertexs and fVertexs.yD) or 0
-
-	self.Dimen.xD = (Dimen and Dimen.xD) or 0
-	self.Dimen.yD = (Dimen and Dimen.yD) or 0
-	
-	self.name = name or ""
-	self.bkgcol = bkgcol or colors.WHITE
-	self.textcol = textcol or colors.BLACK
-	self.fn = fn
-	return btt
+	return setmetatable({
+		fVertex = {xD = (fVertexs and fVertexs.xD) or 0,
+				   yD = (fVertexs and fVertexs.yD) or 0},
+		Dimen = {xD = (Dimen and Dimen.xD) or 0,
+			     yD = (Dimen and Dimen.yD) or 0},
+		name = name or "",
+		bkgcol = bkgcol or colors.WHITE,
+		textcol = textcol or colors.BLACK,
+		fn = fn
+	}, self)
 end
 
 --checks whether mouse is hovering the button
 function Button:is_hovering(mouse)
-	flag = (mouse.xD >= (self.fVertex.xD - self.Dimen.xD) 
+	local flag = (mouse.xD >= (self.fVertex.xD - self.Dimen.xD) 
 			and mouse.xD <= (self.fVertex.xD + self.Dimen.xD))
 	flag = flag and (mouse.yD >= (self.fVertex.yD - self.Dimen.xD) 
 					 and mouse.yD <= (self.fVertex.yD + self.Dimen.yD))
@@ -76,7 +72,7 @@ end
 --for this function to return the correct flag, fn has to 
 --be a void function.
 function Button:activate(mouse)
-	mouse = mouse or {xD = GetMouseX(), yD = GetMouseY()}
+	local mouse = mouse or {xD = GetMouseX(), yD = GetMouseY()}
 	local act = ((self:is_hovering(mouse) and self:is_clicked() and self:fn()) == nil)
 	return act
 end

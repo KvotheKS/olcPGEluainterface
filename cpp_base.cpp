@@ -57,7 +57,6 @@ private:
 		}
 		bool OnUserUpdate(float fElapsedTime) override
 		{
-//			std::cout << "UPDATE";
 			lua_getglobal(stk, "Update");
 			lua_pushnumber(stk, fElapsedTime);
 			lua_pcall(stk, 1,1,0);
@@ -87,7 +86,6 @@ private:
 				luaL_dofile(stk, (path + "/helper.lua").c_str());
 			#endif
 		#endif
-		//	strcpy(updater,"update\0");
 		}
 		~init()
 		{
@@ -135,16 +133,34 @@ public:
 		lua_register(stk,"newSprite" , newSprite);
 		lua_register(stk, "delDecal", delDecal);
 		lua_register(stk, "delSprite", delSprite);
+		//functions that interface changes made to base olcPGE
+		lua_register(stk, "dequeuePBuffer", dequeuePBuffer);
 		//Test-only functions. Serve no other purpose.
 		lua_register(stk, "newInt", newInt);
 		lua_register(stk, "delInt", delInt);
 	}
 public:
+	static int dequeuePBuffer(lua_State* stk)
+	{
+		std::queue<char>* pKeyboardBuffer = demiwp->GetPBuffer();
+		if(pKeyboardBuffer->empty())
+			lua_pushnil(stk);
+		else
+			while(!pKeyboardBuffer->empty())
+			{
+				lua_pushinteger(stk,pKeyboardBuffer->front());
+				pKeyboardBuffer->pop();
+			}
+		
+		return 1;
+	}
+
 	static int ScreenWidth(lua_State* stk)
 	{
 		lua_pushnumber(stk, demiwp->ScreenWidth());
 		return 1;
 	}
+
 	static int ScreenHeight(lua_State* stk)
 	{
 		lua_pushnumber(stk, demiwp->ScreenHeight());

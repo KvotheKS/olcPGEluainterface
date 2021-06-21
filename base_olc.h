@@ -1,4 +1,4 @@
-#pragma region license_and_help
+ #pragma region license_and_help
 /*
 	olcPixelGameEngine.h
 
@@ -272,6 +272,13 @@
     !! Apple Platforms will not see these updates immediately - Sorry, I dont have a mac to test... !!
 	!!   Volunteers willing to help appreciated, though PRs are manually integrated with credit     !!
 */
+
+/*
+	Changes Made on the Base olc :
+
+	Added const char array to get ascii from Key enum.
+	Added a queue<char> Buffer that gets pressed keys.
+*/
 #pragma endregion
 
 #pragma region hello_world_example
@@ -337,6 +344,7 @@ int main()
 #include <chrono>
 #include <vector>
 #include <list>
+#include <queue>
 #include <thread>
 #include <atomic>
 #include <fstream>
@@ -559,6 +567,26 @@ namespace olc
 		EQUALS, COMMA, MINUS,
 		OEM_1, OEM_2, OEM_3, OEM_4, OEM_5, OEM_6, OEM_7, OEM_8,
 		CAPS_LOCK, ENUM_END
+	};
+
+	//from Key to ascii
+	const char K_ascii[] =
+	{
+		0,
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 
+		'H', 'I', 'J', 'K',  'L','M','N', 
+		'O',  'P',  'Q', 'R', 'S', 'T',  'U', 
+		'V',  'W', 'X', 'Y', 'Z',
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		1,2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+		0, 1, 2, 3,
+		' ', '	', 0, 1, 2,3, 4, 5, 6, 7,
+		-1, 1, -1, '\n', 78, 69,
+		0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+		'*', '/', '+', '-', '.', '.',
+		'=', ',', '-',
+		1, 2, 3, 4, 5, 6, 7, 8,
+		1, 127
 	};
 
 	// O------------------------------------------------------------------------------O
@@ -875,6 +903,8 @@ namespace olc
 		bool IsFocused() const;
 		// Get the state of a specific keyboard button
 		HWButton GetKey(Key k) const;
+		// Get keyboard buffer
+		std::queue<char>* GetPBuffer();
 		// Get the state of a specific mouse button
 		HWButton GetMouse(uint32_t b) const;
 		// Get Mouse X coordinate in "pixel" space
@@ -1063,7 +1093,7 @@ namespace olc
 		bool		pKeyNewState[256] = { 0 };
 		bool		pKeyOldState[256] = { 0 };
 		HWButton	pKeyboardState[256] = { 0 };
-
+		std::queue<char>  pKeyboardBuffer;
 		// State of mouse
 		bool		pMouseNewState[nMouseButtons] = { 0 };
 		bool		pMouseOldState[nMouseButtons] = { 0 };
@@ -1815,6 +1845,9 @@ namespace olc
 
 	HWButton PixelGameEngine::GetKey(Key k) const
 	{ return pKeyboardState[k];	}
+
+	std::queue<char>* PixelGameEngine::GetPBuffer()
+	{ return &pKeyboardBuffer; }
 
 	HWButton PixelGameEngine::GetMouse(uint32_t b) const
 	{ return pMouseState[b]; }
@@ -2921,9 +2954,9 @@ namespace olc
 
 		// Some platforms will need to check for events
 		platform->HandleSystemEvent();
-
+		
 		// Compare hardware input states from previous frame
-		auto ScanHardware = [&](HWButton* pKeys, bool* pStateOld, bool* pStateNew, uint32_t nKeyCount)
+		auto ScanHardware = [&](HWButton* pKeys, bool* pStateOld, bool* pStateNew, uint32_t nKeyCount, std::queue<char>* pBuffer)
 		{
 			for (uint32_t i = 0; i < nKeyCount; i++)
 			{
@@ -2934,6 +2967,9 @@ namespace olc
 					if (pStateNew[i])
 					{
 						pKeys[i].bPressed = !pKeys[i].bHeld;
+												
+						if(pKeys[i].bPressed) 
+							pBuffer->push(K_ascii[i]);				
 						pKeys[i].bHeld = true;
 					}
 					else
@@ -2944,10 +2980,12 @@ namespace olc
 				}
 				pStateOld[i] = pStateNew[i];
 			}
+			while(pBuffer->size() > 5)
+				pBuffer->pop();
 		};
 
-		ScanHardware(pKeyboardState, pKeyOldState, pKeyNewState, 256);
-		ScanHardware(pMouseState, pMouseOldState, pMouseNewState, nMouseButtons);
+		ScanHardware(pKeyboardState, pKeyOldState, pKeyNewState, 256, &pKeyboardBuffer);
+		ScanHardware(pMouseState, pMouseOldState, pMouseNewState, nMouseButtons, &pKeyboardBuffer);
 
 		// Cache mouse coordinates so they remain consistent during frame
 		vMousePos = vMousePosCache;

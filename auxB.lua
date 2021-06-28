@@ -107,23 +107,29 @@ CButton.__index = CButton
 --Dimen.xD is the total width, considering both
 --Button and key.
 
-function CButton:new(fxD, Dimen, name, bkgcol, textcol, key, fn)
+function CButton:new(fVertexs, Dimen, name, bkgcol, textcol, key)
 	return setmetatable({
-		fxD = fxD or 0,
+		fVertex = {xD = (fVertexs and fVertexs.xD) or 0,
+				   yD = (fVertexs and fVertexs.yD) or 0},
 		Dimen = {xD = (Dimen and Dimen.xD) or 0,
 			     yD = (Dimen and Dimen.yD) or 0},
 		name = name or "",
 		bkgcol = bkgcol or colors.WHITE,
 		textcol = textcol or colors.BLACK,
-		key = key,
-		fn = fn,
-		cBuff = false,
-		timeBuff = 0
+		key = key or "",
+		cBuff = false
 	}, self)
 end
 
+function CButton:activate(mouse)
+	local mouse = mouse or {xD = GetMouseX(), yD = GetMouseY()}
+	local act = (self:is_hovering(mouse) and MousePress(0))
+	self.cBuff = act
+	return act
+end
+
 function CButton:print(yD)
-	local x = self.fxD - self.Dimen.xD
+	local x = self.fVertex.xD - self.Dimen.xD
 	local y = yD - self.Dimen.yD
 	local lW = math.floor(self.Dimen.xD*0.8)
 
@@ -131,12 +137,80 @@ function CButton:print(yD)
 	DrawRect(x,y,lW,self.Dimen.yD*2, colors.BLACK)
 	
 	DrawCentralS(x + math.floor(lW*0.5), yD, self.name, self.textcol, 1)
-	DrawCentralS(self.fxD, yD, "-->", self.textcol, 1)
+	DrawCentralS(self.fVertex.xD, yD, "-->", self.textcol, 1)
 
-	x = self.fxD + math.floor(self.Dimen.xD*0.2)
+	x = self.fVertex.xD + math.floor(self.Dimen.xD*0.2)
 	y = yD + self.Dimen.yD
 	DrawLine(x, y, x + math.floor(self.Dimen.xD*0.8), y, self.bkgcol)
 
 	x = x + math.floor(self.Dimen.xD*0.4)
 	DrawCentralS(x, y - 5, self.key, self.textcol, 1)
 end
+
+
+--"Snek Config Button"
+
+SCButton = CButton:new()
+SCButton.__index = SCButton
+
+function SCButton:new(fVertexs, Dimen, name, bkgcol, textcol, key, typef)
+	return setmetatable({
+		fVertex = {xD = (fVertexs and fVertexs.xD) or 0,
+				   yD = (fVertexs and fVertexs.yD) or 0},
+		Dimen = {xD = (Dimen and Dimen.xD) or 0,
+			     yD = (Dimen and Dimen.yD) or 0},
+		name = name or "",
+		bkgcol = bkgcol or colors.WHITE,
+		textcol = textcol or colors.BLACK,
+		key = key or "",
+		cBuff = false,
+		type = typef or 1,
+		tBuff = ""
+	}, self)
+end
+
+function SCButton:activate(mouse)
+	local mouse = mouse or {xD = GetMouseX(), yD = GetMouseY()}
+	local act = (self:is_hovering(mouse) and MousePress(0))
+	return act
+end
+
+function SCButton:is_hovering(mouse)
+	local flag = (mouse.xD >= (self.fVertex.xD - self.Dimen.xD) 
+			and mouse.xD <= (self.fVertex.xD - math.floor(self.Dimen.xD*0.2)))
+	flag = flag and (mouse.yD >= (self.fVertex.yD - self.Dimen.xD) 
+					 and mouse.yD <= (self.fVertex.yD + self.Dimen.yD))
+	return flag
+end
+
+function SCButton:Update(mouse)
+	if(self.cBuff) then 
+		self:ConcatBuff()
+	else
+		dequeuePBuffer()
+		self.cBuff = self:activate(mouse)
+	end
+end
+
+function SCButton:ConcatBuff()
+	local buffer = {dequeuePBuffer()}
+	for _,v in pairs(buffer) do
+		if(v == '\n') then self:confirm(); return end
+		self.tBuff = self.tBuff .. v
+	end
+end
+
+function SCButton:confirm()
+	if(self.type == 1) then
+		self.key = keys[self.tBuff] or self.key	
+	else 
+		self.key = colors[self.tBuff] or tonumber(self.tBuff) or self.key	
+	end
+
+	self.cBuff = false
+	self.tBuff = ""
+end
+
+function SCButton:printT1()
+
+end	
